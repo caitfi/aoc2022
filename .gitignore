@@ -153,3 +153,5 @@ cython_debug/
 
 # Don't need the input file here
 *.txt
+.vscode/launch.json
+.vscode/tasks.json
