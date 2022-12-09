@@ -1,5 +1,6 @@
 from functools import reduce
 import operator
+import sys
 
 # Goal is a nested dictionary
 
@@ -21,19 +22,33 @@ def getToNestedDictionary(dictionary, recursionList):
 def setValueInNestedDictionary(dictionary, recursionList, value):
     getToNestedDictionary(dictionary, recursionList[:-1])[recursionList[-1]] = value
 
-def printOutDictionary(dictionary):
+def unrollDictionary(dictionary, currentPath=''):
+    originalPath = currentPath
     directorySum = 0
     smallDirectories = []
+    allDirectories = {}
     for key, value in dictionary.items():
         if isinstance(value, dict):
-            nextDirSum, nextSmall = printOutDictionary(value)
+            if len(currentPath) < 1:
+                currentPath = currentPath + key
+            else:
+                currentPath = currentPath + key + '/'
+            nextDirSum, nextSmall, nextAll = unrollDictionary(value, currentPath)
+
             smallDirectories.extend(nextSmall)
+            allDirectories.update(nextAll)
+
+            allDirectories[currentPath] = nextDirSum
             if nextDirSum < 100000:
                 smallDirectories.append(nextDirSum)
+
             directorySum += nextDirSum
         else:
             directorySum += value
-    return directorySum, smallDirectories
+        currentPath = originalPath
+
+    
+    return directorySum, smallDirectories, allDirectories
 
 f = open("aoc2022/7-input.txt", "r")
 lines = f.readlines()
@@ -43,6 +58,7 @@ fileSystemDictionary = {
 }
 
 currentDir = ["/"]
+listedDirs = []
 
 i = 1
 
@@ -77,6 +93,16 @@ while i < len(lines):
 print("Finished!")
 # So now, everything is in a dictionary
 # and I have to get the value
-totalSum, totalSmall = printOutDictionary(fileSystemDictionary)
+totalSum, totalSmall, totalAll = unrollDictionary(fileSystemDictionary)
 print("Total filesystem sum: " + str(totalSum))
 print("Sum of small filesystems: " + str(sum(totalSmall)))
+
+# the amount of space I need
+neededSpace = 30000000 - (70000000 - totalSum)
+print("Space needed: " + str(neededSpace))
+
+largeEnoughDirs = dict([(key,val) for key,val in totalAll.items() if val >= neededSpace])
+print(largeEnoughDirs)
+
+dirToDelete = min(largeEnoughDirs, key=largeEnoughDirs.get)
+print("Directory to delete is {0}, with size {1}".format(dirToDelete, largeEnoughDirs[dirToDelete]))
